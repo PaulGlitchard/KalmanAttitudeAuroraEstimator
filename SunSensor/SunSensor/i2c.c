@@ -155,6 +155,10 @@ void handle_command() {
 	if (receive_len == 0)
 		return;
 
+    SAMPLING_LED_ON();
+    __delay_cycles(1000000); // delete tis
+    SAMPLING_LED_OFF();
+
 
 	switch (received_message[0]) {
 

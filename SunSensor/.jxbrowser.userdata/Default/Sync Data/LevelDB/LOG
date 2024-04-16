@@ -1,2 +1,3 @@
-2024/03/28-18:43:35.953 3bc4 Creating DB /home/paul/DEV/university/Bachelor/KalmanAttitudeAuroraEstimator/SunSensor/.jxbrowser.userdata/Default/Sync Data/LevelDB since it was missing.
-2024/03/28-18:43:35.961 3bc4 Reusing MANIFEST /home/paul/DEV/university/Bachelor/KalmanAttitudeAuroraEstimator/SunSensor/.jxbrowser.userdata/Default/Sync Data/LevelDB/MANIFEST-000001
+2024/04/15-12:56:10.253 2b2c Reusing MANIFEST /home/paul/DEV/university/Bachelor/KalmanAttitudeAuroraEstimator/SunSensor/.jxbrowser.userdata/Default/Sync Data/LevelDB/MANIFEST-000001
+2024/04/15-12:56:10.254 2b2c Recovering log #3
+2024/04/15-12:56:10.254 2b2c Reusing old log /home/paul/DEV/university/Bachelor/KalmanAttitudeAuroraEstimator/SunSensor/.jxbrowser.userdata/Default/Sync Data/LevelDB/000003.log 
