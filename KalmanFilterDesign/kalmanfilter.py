@@ -1,4 +1,4 @@
-
+    
 import numpy as np
 
 zero_matrix = np.zeros((1, 2))
@@ -22,7 +22,7 @@ def initialize():
     
     
 def choose_sigma_points():
-    pass
+    sigma_points = np.matrix()
 
 def prediction():
     pass
