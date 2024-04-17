@@ -10,8 +10,9 @@ This Repository will be used for the Bachelor Thesis "Real-Time Kalman Filter ba
 - [Making EKF and UKF more robust](https://msol.people.uic.edu/ECE531/papers/Robust%20Kalman%20filtering%20for%20Satellite%20Attitude%20Estimation.pdf)
 - [Kalman Filter using Sun Sensor, Gyro and Magnetometer](https://www.sciencedirect.com/science/article/pii/S187770581101678X)
 - [Kalman Filter using Sun Sensor, Gyro and Magnetometer 2](https://www.researchgate.net/publication/268555795_Attitude_Determination_by_Magnetometer_and_Gyros_During_Eclipse)
-- [Unscented Kalman Filter Paper](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=882463)
+- [Unscented Kalman Filter Paper](https://ieeexplore.ieee.org/document/882463)
 - [Video Guide](https://www.youtube.com/watch?v=c_6WDC66aVk)
+- [also good](https://www.kalmanfilter.net/ukf.html)
 
 
 
