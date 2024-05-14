@@ -6,14 +6,12 @@ zero_matrix = np.zeros((1, 2))
 class KalmanFilter:
   def __init__(self):
     # state vector
-    self.x = np.matrix([[0.],  #q0  attitude
-                        [0.],  #q1  attitude
-                        [0.],  #q2  attitude
-                        [0.],  #q3  attitude
-                        [0.],  #wx  speed
-                        [0.],  #wy  speed
-                        [0.]]) #wz  speed
-    
+    self.x = np.matrix([[0.],    #q0  attitude
+                        [0.],    #q1  attitude
+                        [0.],    #q2  attitude
+                        [0.],])  #q3  attitude
+
+    # TODO: update initialisation
     # mean
     self.x_mean = np.zeros((7,1))
     print("x\n"+str(self.x))
@@ -43,12 +41,9 @@ class KalmanFilter:
     
     
     
+  # TODO: we need 2n + 1 sigma points -> n = 4 becaue state vector has dimension 4
   def choose_sigma_points(self):
-    sigma_points = np.zeros((7,1))
-    sigma_points[0] = self.x_aug
-    for i in range(1,len(sigma_points)):
-      sigma_points[i] = self.x_aug 
-    return sigma_points
+    return 0
   
   def prediction(self):
     pass
