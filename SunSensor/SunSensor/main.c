@@ -107,7 +107,6 @@ int main(void)
 	init_i2c();
 	init_adc();
 	init_heartbeat_timer();
-
 	sleepmode();
 
 	/*
@@ -120,9 +119,8 @@ int main(void)
 	RESET_WDT();
 
 	unsigned int idle_counter = ~0;
-
+	WDTCTL = WDTPW | WDTHOLD; // stop watchdog timer
 	while(1) {
-
 		// Goto sleep except listen interrupts
 		__bis_SR_register(LPM1_bits + GIE);
 		__no_operation();
