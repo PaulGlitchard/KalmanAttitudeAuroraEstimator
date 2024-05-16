@@ -8,8 +8,8 @@ zero_matrix = np.zeros((1, 2))
 
 class KalmanFilter:
   def __init__(self):
-    self.alpha = 15 # https://liu.diva-portal.org/smash/get/diva2:1641373/FULLTEXT01.pdf
-    self.beta = 224
+    self.alpha = 10**(-3) # https://liu.diva-portal.org/smash/get/diva2:1641373/FULLTEXT01.pdf
+    self.beta = 2
     self.kappa = 0
     
     self.scaling_factor = (self.alpha ** 2) * (SYSTEM_DIM + self.kappa) - SYSTEM_DIM
@@ -51,13 +51,9 @@ class KalmanFilter:
       print(self.sigma_points[i])
       
     self.weights_m = self.compute_weights_m()
-    for i in range(len(self.weights_m)):
-        print(self.weights_m[i])
-    print(sum(self.weights_m))
+    print(f'sum weights_m: {sum(self.weights_m)}')
     self.weights_c = self.compute_weights_c()
-    for i in range(len(self.weights_c)):
-      print(self.weights_c[i])
-    print(sum(self.weights_c))
+    print(f'sum weights_c: {sum(self.weights_c)}')
     # print("sigma points:")
     # print(self.sigma_points)
     
@@ -77,12 +73,8 @@ class KalmanFilter:
     return sigma_points
   
   def compute_weights(self,weights):
-    print(SYSTEM_DIM + self.scaling_factor)
-    print(self.scaling_factor)
-    print(SYSTEM_DIM)
-    
-    for i in range(SYSTEM_DIM):
-      weights.append(1/(2*(SYSTEM_DIM + self.scaling_factor)))
+    for i in range(2*SYSTEM_DIM):
+      weights.append(1 / ( 2 * (SYSTEM_DIM + self.scaling_factor)))
     return weights
   
   
@@ -97,7 +89,7 @@ class KalmanFilter:
   def compute_weights_c(self):
     print("computingg weights c...")
     weights = []
-    weights.append(self.scaling_factor / (SYSTEM_DIM + self.scaling_factor) + (1 - self.alpha**2 + self.beta))
+    weights.append((self.scaling_factor / (SYSTEM_DIM + self.scaling_factor)) + (1 - self.alpha**2 + self.beta))
     return self.compute_weights(weights)
   
   
