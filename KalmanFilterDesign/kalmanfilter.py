@@ -92,7 +92,13 @@ class KalmanFilter:
     return self.compute_weights(weights)
   
   
+  def time_update(self):
+    print("time update...")
+    pass
+    
+  
   def prediction(self):
+    print("prediction...")
     pass
 
   def execute_kalman_filter(self):
