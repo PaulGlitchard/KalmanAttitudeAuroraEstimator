@@ -14,6 +14,7 @@ This Repository will be used for the Bachelor Thesis "Real-Time Kalman Filter ba
 - [Video Guide](https://www.youtube.com/watch?v=c_6WDC66aVk)
 - [also good](https://www.kalmanfilter.net/ukf.html)
 - [UKF article](https://towardsdatascience.com/the-unscented-kalman-filter-anything-ekf-can-do-i-can-do-it-better-ce7c773cf88d)
+- [UKF Quaternions](https://kodlab.seas.upenn.edu/uploads/Arun/UKFpaper.pdf)
 
 
 

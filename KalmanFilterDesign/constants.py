@@ -2,3 +2,7 @@
 
 
 SYSTEM_DIM = 4 # in most formulas this is n
+
+QUATERNION = 4
+WINKELSPEED = 3
+STATE_VEC_SIZE = QUATERNION + WINKELSPEED
