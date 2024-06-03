@@ -26,7 +26,10 @@ class KalmanFilter:
     self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
   
     sigma_points = self.compute_sigma_points()
-    self.state_vector = self.process_model(self.state_vector,sigma_points[0], 0.1)
+    
+    for i in range(len(sigma_points)):
+      sigma_points[i] = self.process_model(sigma_points[i],np.zeros((6,1)), 0.1)
+      print(sigma_points[i])
     
     
     
@@ -43,39 +46,41 @@ class KalmanFilter:
   
   
   def process_model(self,state_vector,process_noise, time_diff):
+    # print(len(state_vector))
+    # print(len(process_noise))
     process_noise_q = process_noise[0:3]
-    process_noise_w = process_noise[4:7]
+    process_noise_w = process_noise[3:6]
     
     angle_w = np.linalg.norm(process_noise_q) * time_diff
-    axis_w = np.zeros((STATE_VEC_SIZE,1))
+    axis_w = np.zeros((3,1))
     if (np.linalg.norm(process_noise_q) != 0):
       axis_w  = process_noise_q / np.linalg.norm(process_noise_q)
-    print(axis_w)
+    # print(axis_w)
     quaternion_w = np.zeros((QUATERNION,1))
     quaternion_w[0] = math.cos(angle_w/2)
     quaternion_w[1:4] = (axis_w * math.sin(angle_w/2))
-    print("quaternion_w")
-    print(quaternion_w)
+    # print("quaternion_w")
+    # print(quaternion_w)
 
     disturbed_quaternion =  state_vector[0:4] * quaternion_w
     disturbed_angular_velocity = state_vector[4:7] + process_noise_w
     
     
     angle_d = np.linalg.norm(process_noise[4:7]) * time_diff
-    axis_d = np.zeros((STATE_VEC_SIZE,1))
+    axis_d = np.zeros((3,1))
     if (np.linalg.norm(process_noise[4:7]) != 0):
       axis_d = process_noise[4:7] / np.linalg.norm(process_noise[4:7])
     
     quaternion_delta = np.zeros((QUATERNION,1))
     quaternion_delta[0] = math.cos(angle_d/2)
     quaternion_delta[1:4] = (axis_d * math.sin(angle_d/2))
-    print("quaternion_delta")
-    print(quaternion_delta)
+    # print("quaternion_delta")
+    # print(quaternion_delta)
     
     state_vector[0:4] = disturbed_quaternion * quaternion_delta
     state_vector[4:7] = disturbed_angular_velocity
-    print("state_vector")
-    print(state_vector)
+    # print("state_vector")
+    # print(state_vector)
     
     return state_vector
 
