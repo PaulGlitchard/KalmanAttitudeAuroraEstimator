@@ -21,12 +21,14 @@ def quaternion_mult(q1,q2):
 
 class KalmanFilter:
   def __init__(self):
-    self.state_vector = np.zeros((STATE_VEC_SIZE,1))
-    self.process_noise_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
+    self.state_vector = np.ones((STATE_VEC_SIZE,1))
+    self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
     self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
   
     sigma_points = self.compute_sigma_points()
-    self.new_state_vector = self.process_model(sigma_points, 0)
+    self.state_vector = self.process_model(self.state_vector,sigma_points[0], 0.1)
+    
+    
     
   def compute_sigma_points(self):
     sigma_points = []
@@ -35,32 +37,48 @@ class KalmanFilter:
     for i in range(len(W[:,0])):
       sigma_points.append(self.state_vector + W[:,i].reshape(len(W[:,i]),1))
       sigma_points.append(self.state_vector - W[:,i].reshape(len(W[:,i]),1))
-      
-    for i in range(len(sigma_points)):
-      print(sigma_points[i])
     
-    print(len(sigma_points))
     return sigma_points
   
-  def process_model(state_vector,process_noise, time_diff):
-    angle = np.linalg.norm(process_noise) * time_diff
-    print("process noise")
-    print(process_noise)
-    axis  = process_noise / np.linalg.norm(process_noise)
-    print("new quat")
-    quaternion_delta = [
-      [math.cos(angle/2)],
-      [(axis * math.sin(angle/2))[0]],
-      [(axis * math.sin(angle/2))[1]],
-      [(axis * math.sin(angle/2))[2]],
-      [(axis * math.sin(angle/2))[3]]
-    ]
-
-    new_quat = process_noise * quaternion_delta
-    print(new_quat)
-    new_state_vector = 0
-    return new_state_vector
+  
+  
+  def process_model(self,state_vector,process_noise, time_diff):
+    process_noise_q = process_noise[0:3]
+    process_noise_w = process_noise[4:7]
     
+    angle_w = np.linalg.norm(process_noise_q) * time_diff
+    axis_w = np.zeros((STATE_VEC_SIZE,1))
+    if (np.linalg.norm(process_noise_q) != 0):
+      axis_w  = process_noise_q / np.linalg.norm(process_noise_q)
+    print(axis_w)
+    quaternion_w = np.zeros((QUATERNION,1))
+    quaternion_w[0] = math.cos(angle_w/2)
+    quaternion_w[1:4] = (axis_w * math.sin(angle_w/2))
+    print("quaternion_w")
+    print(quaternion_w)
+
+    disturbed_quaternion =  state_vector[0:4] * quaternion_w
+    disturbed_angular_velocity = state_vector[4:7] + process_noise_w
+    
+    
+    angle_d = np.linalg.norm(process_noise[4:7]) * time_diff
+    axis_d = np.zeros((STATE_VEC_SIZE,1))
+    if (np.linalg.norm(process_noise[4:7]) != 0):
+      axis_d = process_noise[4:7] / np.linalg.norm(process_noise[4:7])
+    
+    quaternion_delta = np.zeros((QUATERNION,1))
+    quaternion_delta[0] = math.cos(angle_d/2)
+    quaternion_delta[1:4] = (axis_d * math.sin(angle_d/2))
+    print("quaternion_delta")
+    print(quaternion_delta)
+    
+    state_vector[0:4] = disturbed_quaternion * quaternion_delta
+    state_vector[4:7] = disturbed_angular_velocity
+    print("state_vector")
+    print(state_vector)
+    
+    return state_vector
+
     
     
     
