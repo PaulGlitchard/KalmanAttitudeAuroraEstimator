@@ -44,7 +44,10 @@ class KalmanFilter:
   
   def process_model(state_vector,process_noise, time_diff):
     angle = np.linalg.norm(process_noise) * time_diff
+    print("process noise")
+    print(process_noise)
     axis  = process_noise / np.linalg.norm(process_noise)
+    print("new quat")
     quaternion_delta = [
       [math.cos(angle/2)],
       [(axis * math.sin(angle/2))[0]],
@@ -52,7 +55,9 @@ class KalmanFilter:
       [(axis * math.sin(angle/2))[2]],
       [(axis * math.sin(angle/2))[3]]
     ]
+
     new_quat = process_noise * quaternion_delta
+    print(new_quat)
     new_state_vector = 0
     return new_state_vector
     
