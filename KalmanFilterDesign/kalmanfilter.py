@@ -27,10 +27,14 @@ class KalmanFilter:
   
     sigma_points = self.compute_sigma_points()
     
+    state_vector_set = []
     for i in range(len(sigma_points)):
-      sigma_points[i] = self.process_model(sigma_points[i],np.zeros((6,1)), 0.1)
-      print(sigma_points[i])
+      state_vector_set.append(self.process_model(sigma_points[i],np.zeros((6,1)), 0.1))
+      print(state_vector_set[i])
     
+    state_vector_set_mean = sum(state_vector_set)/len(state_vector_set)
+    print("state_vector_set_mean")
+    print(state_vector_set_mean)
     
     
   def compute_sigma_points(self):
