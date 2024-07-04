@@ -49,13 +49,13 @@ class KalmanFilter:
   
   
   
-  def process_model(self,state_vector,process_noise, time_diff):
+  def process_model(self,state_vector,process_noise, time_difference):
     # print(len(state_vector))
     # print(len(process_noise))
     process_noise_q = process_noise[0:3]
     process_noise_w = process_noise[3:6]
     
-    angle_w = np.linalg.norm(process_noise_q) * time_diff
+    angle_w = np.linalg.norm(process_noise_q) * time_difference
     axis_w = np.zeros((3,1))
     if (np.linalg.norm(process_noise_q) != 0):
       axis_w  = process_noise_q / np.linalg.norm(process_noise_q)
@@ -70,7 +70,7 @@ class KalmanFilter:
     disturbed_angular_velocity = state_vector[4:7] + process_noise_w
     
     
-    angle_d = np.linalg.norm(process_noise[4:7]) * time_diff
+    angle_d = np.linalg.norm(process_noise[4:7]) * time_difference
     axis_d = np.zeros((3,1))
     if (np.linalg.norm(process_noise[4:7]) != 0):
       axis_d = process_noise[4:7] / np.linalg.norm(process_noise[4:7])
