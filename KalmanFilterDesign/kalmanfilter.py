@@ -19,6 +19,13 @@ def quaternion_mult(q1,q2):
   quaternion_new = np.array([w, x, y, z])
   return quaternion_new
 
+def quaternion_inv(q):
+  q[0] = q[0]
+  q[1] = -q[1]
+  q[1] = -q[2]
+  q[2] = -q[3]
+  return q
+
 class KalmanFilter:
   def __init__(self):
     self.state_vector = np.ones((STATE_VEC_SIZE,1))
@@ -32,7 +39,7 @@ class KalmanFilter:
       state_vector_set.append(self.process_model(sigma_points[i],np.zeros((6,1)), 0.1))
       print(state_vector_set[i])
     
-    state_vector_set_mean = sum(state_vector_set)/len(state_vector_set)
+    state_vector_set_mean = self.mean_of_state_vector(state_vector_set)
     print("state_vector_set_mean")
     print(state_vector_set_mean)
     
@@ -87,6 +94,33 @@ class KalmanFilter:
     # print(state_vector)
     
     return state_vector
+  
+  def mean_of_state_vector(self,state_vector_list):
+    quat_list = []
+    vec_list = []
+    
+    for element in state_vector_list:
+      quat_list.append(element[0:4])
+      vec_list.append(element[4:7])
+    
+    # calc mean of anular velocity part
+    vec_mean = sum(vec_list)/(2*STATE_VEC_SIZE)
+    state_vector_mean = np.zeros((STATE_VEC_SIZE,1))
+    state_vector_mean[4:7] = vec_mean
+    
+    # calc mean of orientation component
+    q_mean = quat_list[0]
+    error_quat = np.zeros((QUATERNION,1))
+    for i in range(2*STATE_VEC_SIZE):
+      error_quat = quaternion_mult(quat_list[i],quaternion_inv(q_mean))
+      q_mean = quaternion_mult(error_quat,q_mean)
+
+    print(state_vector_mean)
+    return state_vector_mean
+    
+  
+  def cov_of_state_vector(self,state_vector_list):
+    pass
 
     
     
