@@ -40,6 +40,7 @@ class KalmanFilter:
       print(state_vector_set[i])
     
     state_vector_set_mean = self.mean_of_state_vector(state_vector_set)
+    state_vector_set_cov = self.cov_of_state_vector(state_vector_set)
     print("state_vector_set_mean")
     print(state_vector_set_mean)
     
@@ -114,7 +115,7 @@ class KalmanFilter:
     for i in range(2*STATE_VEC_SIZE):
       error_quat = quaternion_mult(quat_list[i],quaternion_inv(q_mean))
       q_mean = quaternion_mult(error_quat,q_mean)
-
+    state_vector_mean[0:4] = q_mean
     print(state_vector_mean)
     return state_vector_mean
     
