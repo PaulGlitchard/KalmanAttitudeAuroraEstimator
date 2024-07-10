@@ -6,6 +6,8 @@ from scipy.linalg import sqrtm
 
 zero_matrix = np.zeros((1, 2))
 
+np.set_printoptions(precision=3)
+
 def quaternion_mult(q1,q2):
 
   w1, x1, y1, z1 = q1
@@ -29,6 +31,13 @@ def quaternion_inv(q):
 class KalmanFilter:
   def __init__(self):
     self.state_vector = np.ones((STATE_VEC_SIZE,1))
+    self.state_vector[0] = 0.3
+    self.state_vector[1] = 0.4
+    self.state_vector[2] = 0.8
+    self.state_vector[3] = 0.6
+    self.state_vector[4] = 0.4
+    self.state_vector[5] = 0.8
+    self.state_vector[6] = 0.6
     self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
     self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
   
@@ -36,13 +45,19 @@ class KalmanFilter:
     
     state_vector_set = []
     for i in range(len(sigma_points)):
-      state_vector_set.append(self.process_model(sigma_points[i],np.zeros((6,1)), 0.1))
+      state_vector_set.append(self.process_model(sigma_points[i],np.zeros((6,1)), 0))
       print(state_vector_set[i])
     
     state_vector_set_mean = self.mean_of_state_vector(state_vector_set)
-    state_vector_set_cov = self.cov_of_state_vector(state_vector_set)
+    state_vector_set_cov = self.cov_of_state_vector(state_vector_set,state_vector_set_mean)
     print("state_vector_set_mean")
     print(state_vector_set_mean)
+    print("state_vector_set_cov")
+    print(state_vector_set_cov)
+    
+    projected_measurement_vectors = []
+    for i in range(len(sigma_points)):
+      projected_measurement_vectors.append(self.measurement_model(sigma_points[i],np.zeros((3,1)),0))
     
     
   def compute_sigma_points(self):
@@ -120,10 +135,36 @@ class KalmanFilter:
     return state_vector_mean
     
   
-  def cov_of_state_vector(self,state_vector_list):
-    pass
+  def cov_of_state_vector(self,state_vector_list, mean):
+    priori_state_vec_cov = 0
 
+    for i in range(2*STATE_VEC_SIZE):
+      W_i = np.array(state_vector_list[i]-mean)
+      priori_state_vec_cov = priori_state_vec_cov + W_i @ W_i.T
     
+    priori_state_vec_cov = priori_state_vec_cov/(2*STATE_VEC_SIZE)
+    print("TIS IS MAYBE STILL WRON")
+    return priori_state_vec_cov
+  
+  def measurement_model(self,sigma_point,noise,time_diff):
+    q = sigma_point[0:4]
+    w = sigma_point[4:7]
+    
+    z_rot = w + noise # TODO: noise of rot
+    
+    g_vector = TODO = np.array([1, 2, 3])
+    g = np.array([0, g_vector[0], g_vector[1], g_vector[2]])
+    g_ = quaternion_mult(quaternion_mult(q,g),quaternion_inv(q))
+    
+    b_vector = TODO = np.array([1, 2, 3])
+    b = np.array([0, b_vector[0], b_vector[1], b_vector[2]])
+    b_ = quaternion_mult(quaternion_mult(q,b),quaternion_inv(q))
+    
+    z_acc = g_[1:4] + noise # TODO: noise of acc 
+    z_mag = b_[1:4] + noise # TODO: noise of mag
+
+    print(np.concatenate((z_rot,z_acc,z_mag)))
+    return np.concatenate((z_rot,z_acc,z_mag))
     
     
   def execute_kalman_filter(self):
