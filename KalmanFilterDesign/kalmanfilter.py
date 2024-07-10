@@ -59,6 +59,10 @@ class KalmanFilter:
     for i in range(len(sigma_points)):
       projected_measurement_vectors.append(self.measurement_model(sigma_points[i],np.zeros((3,1)),0))
     
+    expected_measurement_vector = self.mean_of_measurement_vectors(projected_measurement_vectors)
+    print("expected_measurement_vector")
+    print(expected_measurement_vector)
+    measurement_estimate_cov = self.cov_of_measurement_vectors(projected_measurement_vectors,expected_measurement_vector)
     
   def compute_sigma_points(self):
     sigma_points = []
@@ -147,6 +151,7 @@ class KalmanFilter:
     return priori_state_vec_cov
   
   def measurement_model(self,sigma_point,noise,time_diff):
+    print("TODO: use my own sensors ere")
     q = sigma_point[0:4]
     w = sigma_point[4:7]
     
@@ -163,9 +168,23 @@ class KalmanFilter:
     z_acc = g_[1:4] + noise # TODO: noise of acc 
     z_mag = b_[1:4] + noise # TODO: noise of mag
 
-    print(np.concatenate((z_rot,z_acc,z_mag)))
+    # print(np.concatenate((z_rot,z_acc,z_mag)))
     return np.concatenate((z_rot,z_acc,z_mag))
+  
+  def mean_of_measurement_vectors(self,measurement_vectors):
+    mean = 0
+    for i in range(2*STATE_VEC_SIZE):
+      mean += measurement_vectors[i]
+      
+    return mean/(2*STATE_VEC_SIZE)
+  
+  def cov_of_measurement_vectors(self,projected_measurement_vectors,expected_measurement_vector):
+    cov = 0
+    for i in range(2*STATE_VEC_SIZE):
+      vector = projected_measurement_vectors[i] - expected_measurement_vector
+      cov += vector @ vector.T
     
+    return cov/(2*STATE_VEC_SIZE)
     
   def execute_kalman_filter(self):
     print("Executing Kalman Filter...")
