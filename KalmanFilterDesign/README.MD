@@ -2,16 +2,15 @@
 
 | in code | in paper | 
 |----------|----------|
-| state_vector | $$ |
-| process_noise_vector | $$ |
-| covariance_matrix | $$ |
-| measurement_noise | $$ |
-| sigma_points | $$ |
-| state_vector_set | $$ |
-| state_vector_set_mean | $$ |
-| state_vector_set_cov | $$ |
-| projected_measurement_vectors | $$ |
-| expected_measurement_vector | $$ |
-| measurement_estimate_cov | $$ |
+| state_vector | $\hat{x}_k$ |
+| covariance_matrix | $Q$ |
+| measurement_noise | $v$ |
+| sigma_points | $X$ |
+| state_vector_set | $Y$ |
+| state_vector_set_mean | $\hat{x}^-_k$ |
+| state_vector_set_cov | $\hat{P}^-_k$ |
+| projected_measurement_vectors | $Z$ |
+| expected_measurement_vector | $\hat{z}^-_k$ |
+| measurement_estimate_cov | $P_{zz}$ |
 | measurement_noise_cov | $R$ |
 

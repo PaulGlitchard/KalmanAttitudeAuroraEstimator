@@ -155,7 +155,7 @@ class KalmanFilter:
   def __init__(self):
     self.state_vector = np.random.uniform(0,1,STATE_VEC_SIZE).reshape(-1,1)
     print(self.state_vector)
-    self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
+    # self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
     self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
     self.measurement_noise = np.ones((3*3,1))
   
