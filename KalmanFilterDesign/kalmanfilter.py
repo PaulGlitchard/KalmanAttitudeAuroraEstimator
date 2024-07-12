@@ -153,14 +153,8 @@ def cov_of_measurement_vectors(projected_measurement_vectors,expected_measuremen
 
 class KalmanFilter:
   def __init__(self):
-    self.state_vector = np.ones((STATE_VEC_SIZE,1))
-    self.state_vector[0] = 0.3
-    self.state_vector[1] = 0.4
-    self.state_vector[2] = 0.8
-    self.state_vector[3] = 0.6
-    self.state_vector[4] = 0.4
-    self.state_vector[5] = 0.8
-    self.state_vector[6] = 0.6
+    self.state_vector = np.random.uniform(0,1,STATE_VEC_SIZE).reshape(-1,1)
+    print(self.state_vector)
     self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
     self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
     self.measurement_noise = np.ones((3*3,1))
