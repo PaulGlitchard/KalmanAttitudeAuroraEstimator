@@ -28,6 +28,7 @@ def quaternion_inv(q):
   q[2] = -q[3]
   return q
 
+
 def compute_sigma_points(state_vector,covariance_matrix):
   sigma_points = []
   Q = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE)) # TODO: wat is covariance Q
@@ -103,7 +104,7 @@ def mean_of_state_vector(state_vector_list):
   return state_vector_mean
   
 
-def cov_of_state_vector(state_vector_list, mean):
+def calc_state_vector_set_cov(state_vector_list, mean):
   priori_state_vec_cov = 0
 
   for i in range(2*STATE_VEC_SIZE):
@@ -150,40 +151,69 @@ def cov_of_measurement_vectors(projected_measurement_vectors,expected_measuremen
   
   return cov/(2*STATE_VEC_SIZE)
 
+def get_expected_cov(measurement_estimate_cov,measurement_noise_cov):
+  return measurement_estimate_cov + measurement_noise_cov
+
+
+def calc_cross_correlation_matrix(state_vector_set,state_vector_set_mean,projected_measurement_vectors,expected_measurement_vector):
+  cross_correlation_matrix = 0
+  
+  if len(state_vector_set) != 2*STATE_VEC_SIZE:
+    print("len(state_vector_set) != 2*STATE_VEC_SIZE")
+    exit(-1)
+  print("")
+  for i in range(2*STATE_VEC_SIZE):
+    W = state_vector_set[i] - state_vector_set_mean
+    
+    cross_correlation_matrix += W @ np.array(projected_measurement_vectors[i] - expected_measurement_vector).T
+  
+  print(len(projected_measurement_vectors[0]))
+  print(len(state_vector_set[0]))
+  exit()
+  return cross_correlation_matrix / 2*STATE_VEC_SIZE
+    
+
+def calc_kalman_gain(expected_covariance):
+  pass
+  
+
 
 class KalmanFilter:
   def __init__(self):
     self.state_vector = np.random.uniform(0,1,STATE_VEC_SIZE).reshape(-1,1)
     print(self.state_vector)
     # self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
-    self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE))
-    self.measurement_noise = np.ones((3*3,1))
+    self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE)) # TODO
+    self.measurement_noise = np.ones((3*3,1)) # TODO
   
-    sigma_points = compute_sigma_points(self.state_vector,self.covariance_matrix)
+    self.sigma_points = compute_sigma_points(self.state_vector,self.covariance_matrix)
     
-    state_vector_set = []
-    for i in range(len(sigma_points)):
-      state_vector_set.append(process_model(sigma_points[i],np.zeros((6,1)), 0))
-      print(state_vector_set[i])
+    self.state_vector_set = []
+    for i in range(len(self.sigma_points)):
+      self.state_vector_set.append(process_model(self.sigma_points[i],np.zeros((6,1)), 0))
+      print(self.state_vector_set[i])
     
-    state_vector_set_mean = mean_of_state_vector(state_vector_set)
-    state_vector_set_cov = cov_of_state_vector(state_vector_set,state_vector_set_mean)
+    self.state_vector_set_mean = mean_of_state_vector(self.state_vector_set)
+    self.state_vector_set_cov = calc_state_vector_set_cov(self.state_vector_set,self.state_vector_set_mean)
     print("state_vector_set_mean")
-    print(state_vector_set_mean)
+    print(self.state_vector_set_mean)
     print("state_vector_set_cov")
-    print(state_vector_set_cov)
+    print(self.state_vector_set_cov)
     
-    projected_measurement_vectors = []
-    for i in range(len(sigma_points)):
-      projected_measurement_vectors.append(measurement_model(sigma_points[i],np.zeros((3,1)),0))
+    self.projected_measurement_vectors = []
+    for i in range(len(self.sigma_points)):
+      self.projected_measurement_vectors.append(measurement_model(self.sigma_points[i],np.zeros((3,1)),0))
     
-    expected_measurement_vector = mean_of_measurement_vectors(projected_measurement_vectors)
+    self.expected_measurement_vector = mean_of_measurement_vectors(self.projected_measurement_vectors)
     print("expected_measurement_vector")
-    print(expected_measurement_vector)
-    measurement_estimate_cov = cov_of_measurement_vectors(projected_measurement_vectors,expected_measurement_vector)
-    measurement_noise_cov = self.measurement_noise @ self.measurement_noise.T # R
+    print(self.expected_measurement_vector)
+    self.measurement_estimate_cov = cov_of_measurement_vectors(self.projected_measurement_vectors,self.expected_measurement_vector)
+    self.measurement_noise_cov = self.measurement_noise @ self.measurement_noise.T # R
     
+    self.expected_covariance = get_expected_cov(self.measurement_estimate_cov,self.measurement_noise_cov)
     
+    self.cross_correlation_matrix = calc_cross_correlation_matrix(self.state_vector_set,self.state_vector_set_mean,self.projected_measurement_vectors,self.expected_measurement_vector)
+    print(self.cross_correlation_matrix)
   #=====================================================
 
     

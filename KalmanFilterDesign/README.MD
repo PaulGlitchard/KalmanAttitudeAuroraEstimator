@@ -13,4 +13,6 @@
 | expected_measurement_vector | $\hat{z}^-_k$ |
 | measurement_estimate_cov | $P_{zz}$ |
 | measurement_noise_cov | $R$ |
+| expected_covariance | P_{vv} |
+| cross_correlation_matrix | P_{xz}|
 
