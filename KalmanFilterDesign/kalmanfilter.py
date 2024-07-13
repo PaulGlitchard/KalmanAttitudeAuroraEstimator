@@ -115,12 +115,12 @@ def calc_state_vector_set_cov(state_vector_list, mean):
   print("TIS IS MAYBE STILL WRON")
   return priori_state_vec_cov
 
-def measurement_model(sigma_point,measurement_noise,time_diff):
+def measurement_model(sigma_point,measurement_noise):
   print("TODO: use my own sensors ere")
   q = sigma_point[0:4]
   w = sigma_point[4:7]
-  
-  z_rot = w + measurement_noise # TODO: noise of rot
+
+  z_rot = w + measurement_noise[:3] # TODO: noise of rot
   
   g_vector = TODO = np.array([1, 2, 3])
   g = np.array([0, g_vector[0], g_vector[1], g_vector[2]])
@@ -130,8 +130,8 @@ def measurement_model(sigma_point,measurement_noise,time_diff):
   b = np.array([0, b_vector[0], b_vector[1], b_vector[2]])
   b_ = quaternion_mult(quaternion_mult(q,b),quaternion_inv(q))
   
-  z_acc = g_[1:4] + measurement_noise # TODO: noise of acc 
-  z_mag = b_[1:4] + measurement_noise # TODO: noise of mag
+  z_acc = g_[1:4] + measurement_noise[3:6] # TODO: noise of acc 
+  z_mag = b_[1:4] + measurement_noise[6:] # TODO: noise of mag
 
   # print(np.concatenate((z_rot,z_acc,z_mag)))
   return np.concatenate((z_rot,z_acc,z_mag))
@@ -164,17 +164,21 @@ def calc_cross_correlation_matrix(state_vector_set,state_vector_set_mean,project
   print("")
   for i in range(2*STATE_VEC_SIZE):
     W = state_vector_set[i] - state_vector_set_mean
-    
     cross_correlation_matrix += W @ np.array(projected_measurement_vectors[i] - expected_measurement_vector).T
   
-  print(len(projected_measurement_vectors[0]))
-  print(len(state_vector_set[0]))
-  exit()
   return cross_correlation_matrix / 2*STATE_VEC_SIZE
     
 
-def calc_kalman_gain(expected_covariance):
-  pass
+def calc_kalman_gain(cross_correlation_matrix,expected_covariance):
+  kalman_gain = cross_correlation_matrix @ np.array(expected_covariance).T
+  return kalman_gain
+
+def calc_innovation(measurement,expected_measurement_vector):
+  return measurement - expected_measurement_vector
+  
+  
+def update_state_vector(state_vector_set_mean,kalman_gain,innovation):
+  return state_vector_set_mean + kalman_gain @ innovation
   
 
 
@@ -202,7 +206,7 @@ class KalmanFilter:
     
     self.projected_measurement_vectors = []
     for i in range(len(self.sigma_points)):
-      self.projected_measurement_vectors.append(measurement_model(self.sigma_points[i],np.zeros((3,1)),0))
+      self.projected_measurement_vectors.append(measurement_model(self.sigma_points[i],np.zeros((3*3,1))))
     
     self.expected_measurement_vector = mean_of_measurement_vectors(self.projected_measurement_vectors)
     print("expected_measurement_vector")
@@ -213,7 +217,14 @@ class KalmanFilter:
     self.expected_covariance = get_expected_cov(self.measurement_estimate_cov,self.measurement_noise_cov)
     
     self.cross_correlation_matrix = calc_cross_correlation_matrix(self.state_vector_set,self.state_vector_set_mean,self.projected_measurement_vectors,self.expected_measurement_vector)
+    print("expected_measurement_vector")
     print(self.cross_correlation_matrix)
+
+    self.kalman_gain = calc_kalman_gain(self.cross_correlation_matrix,self.expected_covariance)
+    self.measurement = measurement_model(self.state_vector,self.measurement_noise)
+    self.innovation = calc_innovation(self.measurement,self.expected_measurement_vector)
+    self.state_vector = update_state_vector(self.state_vector_set_mean,self.kalman_gain,self.innovation)
+    print(self.state_vector)
   #=====================================================
 
     
