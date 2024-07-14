@@ -9,7 +9,9 @@ zero_matrix = np.zeros((1, 2))
 np.set_printoptions(precision=3)
 
 def quaternion_mult(q1,q2):
-
+  print("MULT")
+  print(q1)
+  print(q2)
   w1, x1, y1, z1 = q1
   w2, x2, y2, z2 = q2
 
@@ -29,10 +31,10 @@ def quaternion_inv(q):
   return q
 
 
-def compute_sigma_points(state_vector,covariance_matrix):
+def compute_sigma_points(state_vector,error_covariance_matrix):
   sigma_points = []
   Q = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE)) # TODO: wat is covariance Q
-  W = sqrtm(2*STATE_VEC_SIZE * (covariance_matrix + Q))
+  W = sqrtm(2*STATE_VEC_SIZE * (error_covariance_matrix + Q))
   for i in range(len(W[:,0])):
     sigma_points.append(state_vector + W[:,i].reshape(len(W[:,i]),1))
     sigma_points.append(state_vector - W[:,i].reshape(len(W[:,i]),1))
@@ -51,7 +53,7 @@ def process_model(state_vector,process_noise, time_difference):
   axis_w = np.zeros((3,1))
   if (np.linalg.norm(process_noise_q) != 0):
     axis_w  = process_noise_q / np.linalg.norm(process_noise_q)
-  # print(axis_w)
+  # print("axis_w ", axis_w)
   quaternion_w = np.zeros((QUATERNION,1))
   quaternion_w[0] = math.cos(angle_w/2)
   quaternion_w[1:4] = (axis_w * math.sin(angle_w/2))
@@ -66,7 +68,7 @@ def process_model(state_vector,process_noise, time_difference):
   axis_d = np.zeros((3,1))
   if (np.linalg.norm(process_noise[4:7]) != 0):
     axis_d = process_noise[4:7] / np.linalg.norm(process_noise[4:7])
-  
+  # print("axis_d ", axis_d)
   quaternion_delta = np.zeros((QUATERNION,1))
   quaternion_delta[0] = math.cos(angle_d/2)
   quaternion_delta[1:4] = (axis_d * math.sin(angle_d/2))
@@ -99,6 +101,9 @@ def mean_of_state_vector(state_vector_list):
   for i in range(2*STATE_VEC_SIZE):
     error_quat = quaternion_mult(quat_list[i],quaternion_inv(q_mean))
     q_mean = quaternion_mult(error_quat,q_mean)
+  print("q_mean")
+  print(q_mean)
+  print("")
   state_vector_mean[0:4] = q_mean
   print(state_vector_mean)
   return state_vector_mean
@@ -122,11 +127,11 @@ def measurement_model(sigma_point,measurement_noise):
 
   z_rot = w + measurement_noise[:3] # TODO: noise of rot
   
-  g_vector = TODO = np.array([1, 2, 3])
+  g_vector = TODO = np.array([0.1, 0.1, 0.1])
   g = np.array([0, g_vector[0], g_vector[1], g_vector[2]])
   g_ = quaternion_mult(quaternion_mult(q,g),quaternion_inv(q))
   
-  b_vector = TODO = np.array([1, 2, 3])
+  b_vector = TODO = np.array([0.1, 0.1, 0.1])
   b = np.array([0, b_vector[0], b_vector[1], b_vector[2]])
   b_ = quaternion_mult(quaternion_mult(q,b),quaternion_inv(q))
   
@@ -180,17 +185,18 @@ def calc_innovation(measurement,expected_measurement_vector):
 def update_state_vector(state_vector_set_mean,kalman_gain,innovation):
   return state_vector_set_mean + kalman_gain @ innovation
   
-
+def update_covariance(state_vector_set_cov,kalman_gain,expected_covariance):
+  return state_vector_set_cov - kalman_gain @ expected_covariance @ np.array(kalman_gain).T
 
 class KalmanFilter:
   def __init__(self):
     self.state_vector = np.random.uniform(0,1,STATE_VEC_SIZE).reshape(-1,1)
     print(self.state_vector)
     # self.process_noise_vector = np.zeros((STATE_VEC_SIZE,1))
-    self.covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE)) # TODO
+    self.error_covariance_matrix = np.zeros((STATE_VEC_SIZE,STATE_VEC_SIZE)) # TODO
     self.measurement_noise = np.ones((3*3,1)) # TODO
   
-    self.sigma_points = compute_sigma_points(self.state_vector,self.covariance_matrix)
+    self.sigma_points = compute_sigma_points(self.state_vector,self.error_covariance_matrix)
     
     self.state_vector_set = []
     for i in range(len(self.sigma_points)):
@@ -217,7 +223,7 @@ class KalmanFilter:
     self.expected_covariance = get_expected_cov(self.measurement_estimate_cov,self.measurement_noise_cov)
     
     self.cross_correlation_matrix = calc_cross_correlation_matrix(self.state_vector_set,self.state_vector_set_mean,self.projected_measurement_vectors,self.expected_measurement_vector)
-    print("expected_measurement_vector")
+    print("cross_correlation_matrix")
     print(self.cross_correlation_matrix)
 
     self.kalman_gain = calc_kalman_gain(self.cross_correlation_matrix,self.expected_covariance)
@@ -225,9 +231,53 @@ class KalmanFilter:
     self.innovation = calc_innovation(self.measurement,self.expected_measurement_vector)
     self.state_vector = update_state_vector(self.state_vector_set_mean,self.kalman_gain,self.innovation)
     print(self.state_vector)
+    self.error_covariance_matrix = update_covariance(self.state_vector_set_cov,self.kalman_gain,self.expected_covariance)
+    print(self.error_covariance_matrix)
+    self.last_time = 0 #TODO: set start time
   #=====================================================
 
     
-  def execute_kalman_filter(self):
+  def execute_kalman_filter(self, cur_time):
     print("Executing Kalman Filter...")
+    timediff = cur_time - self.last_time
+    self.last_time = cur_time
+    
+    # 1, 2
+    self.sigma_points = compute_sigma_points(self.state_vector,self.error_covariance_matrix)
+    
+    # 3
+    for i in range(len(self.sigma_points)):
+      self.state_vector_set[i] = process_model(self.sigma_points[i],np.zeros((6,1)), 0)
+    
+    # 4
+    self.state_vector_set_mean = mean_of_state_vector(self.state_vector_set)
+    
+    # 5, 6
+    self.state_vector_set_cov = calc_state_vector_set_cov(self.state_vector_set,self.state_vector_set_mean)
 
+    # 7
+    for i in range(len(self.sigma_points)):
+      self.projected_measurement_vectors[i] = measurement_model(self.sigma_points[i],np.zeros((3*3,1)))
+      
+    # 8 # TODO: ere maybe measurement
+    self.expected_measurement_vector = mean_of_measurement_vectors(self.projected_measurement_vectors)
+
+    # 9
+    self.measurement_estimate_cov = cov_of_measurement_vectors(self.projected_measurement_vectors,self.expected_measurement_vector)
+    self.measurement_noise_cov = self.measurement_noise @ self.measurement_noise.T # R
+    self.expected_covariance = get_expected_cov(self.measurement_estimate_cov,self.measurement_noise_cov)
+
+    # 10
+    self.cross_correlation_matrix = calc_cross_correlation_matrix(self.state_vector_set,self.state_vector_set_mean,self.projected_measurement_vectors,self.expected_measurement_vector)
+
+    # 11 - kalman gain
+    self.kalman_gain = calc_kalman_gain(self.cross_correlation_matrix,self.expected_covariance)
+    # 11 - posteriori estimate
+    self.measurement = measurement_model(self.state_vector,self.measurement_noise)
+    self.innovation = calc_innovation(self.measurement,self.expected_measurement_vector)
+    self.state_vector = update_state_vector(self.state_vector_set_mean,self.kalman_gain,self.innovation)
+    # 11 - estimate error covariance P_k
+    self.error_covariance_matrix = update_covariance(self.state_vector_set_cov,self.kalman_gain,self.expected_covariance)
+    
+    
+    print(self.state_vector)
