@@ -127,16 +127,16 @@ def measurement_model(sigma_point,measurement_noise):
 
   z_rot = w + measurement_noise[:3] # TODO: noise of rot
   
-  g_vector = TODO = np.array([0.1, 0.1, 0.1])
+  g_vector = TODO = np.array([0.0, 0.0, 9.81])
   g = np.array([0, g_vector[0], g_vector[1], g_vector[2]])
   g_ = quaternion_mult(quaternion_mult(q,g),quaternion_inv(q))
   
-  b_vector = TODO = np.array([0.1, 0.1, 0.1])
+  b_vector = TODO = np.array([0.3, 0.0, 0.5])
   b = np.array([0, b_vector[0], b_vector[1], b_vector[2]])
   b_ = quaternion_mult(quaternion_mult(q,b),quaternion_inv(q))
   
-  z_acc = g_[1:4] + measurement_noise[3:6] # TODO: noise of acc 
-  z_mag = b_[1:4] + measurement_noise[6:] # TODO: noise of mag
+  z_acc = g_[1:] + measurement_noise[3:6] # TODO: noise of acc 
+  z_mag = b_[1:] + measurement_noise[6:] # TODO: noise of mag
 
   # print(np.concatenate((z_rot,z_acc,z_mag)))
   return np.concatenate((z_rot,z_acc,z_mag))
