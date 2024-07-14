@@ -1,5 +1,33 @@
 
 
+# kalman filter
+| in code | in paper | 
+|----------|----------|
+| state_vector | $x_k$ |
+| error_cov | $P_k$ |
+| priori_error_cov | $P^-_k$ |
+| process_noise_cov | $Q$ |
+| measurement_noise_cov | $R$ |
+| pred_measurement_cov | $P_{zz}$ |
+| innovation_cov | $P_{vv}$ |
+| cross_correlation | $P_{xz}$ |
+| sigma_points | $X_i$ |
+| zero_sigma_points | $W_i$ |
+| transformed_sigma_points | $Y_i$ |
+| measurement_sigma_points | $Z_i$ |
+| adjusted_sigma_points | $W'_i$ |
+| state_estimate | $\hat{x}_k$ |
+| priori_state_estimate | $\hat{x}_k^-$ |
+| predicted_measurement_estimate | $\hat{z}_k^-$ |
+| measurement | $z_k$ |
+| innovation | $ν_k$ |
+| kalman_gain | $K_k$ |
+| process_model | $A(x,w)$ |
+| measurement_model | $H(x,v)$ |
+|  | $$ |
+
+
+# kalman filter test
 | in code | in paper | 
 |----------|----------|
 | state_vector | $\hat{x}_k$ |
