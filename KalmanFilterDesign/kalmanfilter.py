@@ -114,6 +114,13 @@ def compute_adj_sigma_points(transformed_sigma_points, priori_state_estimate):
 
   return adj_sigma_points
 
+def compute_priori_error_cov(adjusted_sigma_points):
+  priori_error_cov = np.zeros((STATE_DIM, STATE_DIM))
+  for i in range(2*STATE_DIM):
+    priori_error_cov += adjusted_sigma_points[i] * adjusted_sigma_points[i].T
+  priori_error_cov = priori_error_cov / (2*STATE_DIM)
+  return priori_error_cov
+
 
 class KalmanFilter:
   def __init__(self):
@@ -205,11 +212,13 @@ class KalmanFilter:
     
     self.adjusted_sigma_points = compute_adj_sigma_points(self.transformed_sigma_points, self.priori_state_estimate)
     
-    # self.priori_error_cov = compute_priori_error_cov(adjusted_sigma_points)
+    self.priori_error_cov = compute_priori_error_cov(self.adjusted_sigma_points)
     self.print_all()
 
   def update(self,time_diff):
-    pass
+
+    self.print_all()
+
 
   def cycle(self,timestamp):
     time_diff = timestamp - self.last_time
