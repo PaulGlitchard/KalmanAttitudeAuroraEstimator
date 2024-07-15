@@ -97,37 +97,23 @@ def mean(state_vector_list):
   
   for _ in range(10):
     error_quat = np.zeros((QUATERNION,1))
+    q_mean_list = [np.zeros(QUATERNION).reshape(-1, 1) for _ in range(2*STATE_DIM)]
     for i in range(2*STATE_DIM):
       error_quat = quaternion_mult(quat_list[i],quaternion_inv(q_mean))
-      q_mean = quaternion_mult(error_quat,q_mean)
+      q_mean_list[i] = quaternion_mult(error_quat,q_mean)
+    barycentic_mean = sum(q_mean_list) / (2*STATE_DIM)
+    q_mean = barycentic_mean * q_mean
 
   state_vector_mean[:4] = q_mean
   return state_vector_mean
 
-def meanpt(state_vector_list):
-    quat_list = []
-    vec_list = []
+def compute_adj_sigma_points(transformed_sigma_points, priori_state_estimate):
+  adj_sigma_points = []
+  for i in range(2*STATE_DIM):
+    adj_sigma_points.append(transformed_sigma_points[i] - priori_state_estimate)
 
-    for element in state_vector_list:
-        quat_list.append(element[:4])
-        vec_list.append(element[4:])
+  return adj_sigma_points
 
-    # Calculate mean of angular velocity part
-    print(np.mean(vec_list, axis=0))
-    vec_mean = np.mean(vec_list, axis=0)
-    state_vector_mean = np.zeros((STATE_DIM,1))
-    state_vector_mean[4:] = vec_mean
-
-    # Calculate mean of orientation component (quaternion)
-    q_mean = quat_list[0]
-    for _ in range(10):  # Iterate to refine the mean quaternion
-        error_quats = [quaternion_mult(quat, quaternion_inv(q_mean)) for quat in quat_list]
-        mean_error_quat = np.mean(error_quats, axis=0)
-        q_mean = quaternion_mult(mean_error_quat, q_mean)
-        q_mean = q_mean / np.linalg.norm(q_mean)  # Normalize the quaternion
-
-    state_vector_mean[:4] = q_mean
-    return state_vector_mean
 
 class KalmanFilter:
   def __init__(self):
@@ -208,20 +194,18 @@ class KalmanFilter:
     self.last_time = 0
 
   def prediction(self,time_diff):
-    self.zero_sigma_points        = generate_zero_sigma_points(self.error_cov, self.process_noise_cov)
+    self.zero_sigma_points = generate_zero_sigma_points(self.error_cov, self.process_noise_cov)
     
-    self.sigma_points             = generate_sigma_points(self.state_estimate, self.zero_sigma_points)
+    self.sigma_points = generate_sigma_points(self.state_estimate, self.zero_sigma_points)
     
     for i in range(2*STATE_DIM):
       self.transformed_sigma_points[i] = process_model(self.sigma_points[i], np.zeros(STATE_DIM).reshape(-1, 1), time_diff)
     
-    print(mean(self.transformed_sigma_points))
-    print(meanpt(self.transformed_sigma_points))
-    exit()
-    # self.priori_state_estimate    = mean(self.transformed_sigma_points)
+    self.priori_state_estimate = mean(self.transformed_sigma_points)
     
-    # self.adjusted_sigma_points    = compute_adj_sigma_points(self.transformed_sigma_points, self.priori_state_estimate)
-    # self.priori_error_cov         = compute_priori_error_cov(adjusted_sigma_points)
+    self.adjusted_sigma_points = compute_adj_sigma_points(self.transformed_sigma_points, self.priori_state_estimate)
+    
+    # self.priori_error_cov = compute_priori_error_cov(adjusted_sigma_points)
     self.print_all()
 
   def update(self,time_diff):
