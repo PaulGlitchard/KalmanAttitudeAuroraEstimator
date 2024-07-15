@@ -94,7 +94,7 @@ def mean_of_state_vector(state_vector_list):
   state_vector_mean = np.zeros((STATE_VEC_SIZE,1))
   state_vector_mean[4:7] = vec_mean
   
-  # calc mean of orientation component
+  # calc mean -of orientation component
   q_mean = quat_list[0]
   error_quat = np.zeros((QUATERNION,1))
   for i in range(2*STATE_VEC_SIZE):
