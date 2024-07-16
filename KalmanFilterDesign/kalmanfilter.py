@@ -5,6 +5,14 @@ STATE_DIM = 7 # (orientation and angular velocity)
 MEASUREMENT_DIM = 3
 QUATERNION = 4
 
+CUR_MEASUREMENT_MODEL = 1
+def getMeasurementModel():
+  global CUR_MEASUREMENT_MODEL
+  CUR_MEASUREMENT_MODEL += 1
+  if CUR_MEASUREMENT_MODEL > 3:
+    CUR_MEASUREMENT_MODEL = 1
+  return CUR_MEASUREMENT_MODEL
+
 def quaternion_mult(q1,q2):
   w1, x1, y1, z1 = q1
   w2, x2, y2, z2 = q2
@@ -76,7 +84,7 @@ def process_model(state_vector, process_noise, time_difference):
 
   return transformed_sigma_point
 
-def mean(state_vector_list):
+def mean_of_transformed_sigma_points(state_vector_list):
   quat_list = []
   vec_list = []
   
@@ -121,6 +129,56 @@ def compute_priori_error_cov(adjusted_sigma_points):
   priori_error_cov = priori_error_cov / (2*STATE_DIM)
   return priori_error_cov
 
+def H1(sigma_point,measurement_noise):
+  if measurement_noise != 0:
+    exit(-1)
+    
+  return sigma_point[4:]
+
+def H2(sigma_point,measurement_noise):
+  if measurement_noise != 0:
+    exit(-1)
+    
+  q = sigma_point[:4]
+  gravity_vector = np.array([0, 0, -9.81])
+  gravity_quat = np.array([0, gravity_vector[0], gravity_vector[1], gravity_vector[2]])
+  g_prime = quaternion_mult(quaternion_mult(q, gravity_quat), quaternion_inv(q))
+  g_prime = g_prime[1:]  # Extract the vector part from the quaternion
+
+  return g_prime
+
+def H3(sigma_point,measurement_noise):
+  if measurement_noise != 0:
+    exit(-1)
+    
+  q = sigma_point[:4]
+  magnetic_field_vector = np.array([1, 0, 0])
+  gravity_quat = np.array([0, magnetic_field_vector[0], magnetic_field_vector[1], magnetic_field_vector[2]])
+  b_prime = quaternion_mult(quaternion_mult(q, gravity_quat), quaternion_inv(q))
+  b_prime = b_prime[1:]
+  
+  return b_prime
+
+def compute_measurement_sigma_points(sigma_points,measurement_noise):
+  model = getMeasurementModel()
+  measurement_sigma_points = []
+  for i in range(2*STATE_DIM):
+    if model == 1:
+      measurement_sigma_points.append(H1(sigma_points[i],measurement_noise))
+    elif model == 2:
+      measurement_sigma_points.append(H2(sigma_points[i],measurement_noise))
+    elif model == 3:
+      measurement_sigma_points.append(H3(sigma_points[i],measurement_noise))
+  return measurement_sigma_points
+
+def mean_of_measurement_sigma_points(measurement_sigma_points):
+  mean = 0
+  for i in range(2*STATE_DIM):
+    mean += mean_of_measurement_sigma_points[i]
+    
+  return mean / (2*STATE_DIM)
+
+def compute_innovation():
 
 class KalmanFilter:
   def __init__(self):
@@ -201,22 +259,48 @@ class KalmanFilter:
     self.last_time = 0
 
   def prediction(self,time_diff):
+    # 1
     self.zero_sigma_points = generate_zero_sigma_points(self.error_cov, self.process_noise_cov)
-    
+    print("TODO: 6D?")
+    # 2
     self.sigma_points = generate_sigma_points(self.state_estimate, self.zero_sigma_points)
     
+    # 3
     for i in range(2*STATE_DIM):
       self.transformed_sigma_points[i] = process_model(self.sigma_points[i], np.zeros(STATE_DIM).reshape(-1, 1), time_diff)
     
-    self.priori_state_estimate = mean(self.transformed_sigma_points)
+    # 4
+    self.priori_state_estimate = mean_of_transformed_sigma_points(self.transformed_sigma_points)
     
+    # 5
     self.adjusted_sigma_points = compute_adj_sigma_points(self.transformed_sigma_points, self.priori_state_estimate)
     
+    # 6
     self.priori_error_cov = compute_priori_error_cov(self.adjusted_sigma_points)
+    
     self.print_all()
 
   def update(self,time_diff):
+    # 7
+    self.measurement_sigma_points = compute_measurement_sigma_points(self.transformed_sigma_points,0)
 
+    # 8
+    self.predicted_measurement_estimate = mean_of_measurement_sigma_points(self.measurement_sigma_points)
+    self.innovation = compute_innovation()
+    
+    # 9
+    # self.innovation_cov = compute_innovation_cov()
+    
+    # 10
+    # self.cross_correlation = compute_cross_correlation()
+    
+    # 11
+    # self.kalman_gain = compute_kalman_gain()
+    # self.state_estimate = compute_state_estimate()
+    # self.error_cov = compute_error_cov()
+    
+    
+    
     self.print_all()
 
 
