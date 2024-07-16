@@ -6,12 +6,12 @@ MEASUREMENT_DIM = 3
 QUATERNION = 4
 
 CUR_MEASUREMENT_MODEL = 1
-def getMeasurementModel():
-  global CUR_MEASUREMENT_MODEL
-  CUR_MEASUREMENT_MODEL += 1
-  if CUR_MEASUREMENT_MODEL > 3:
-    CUR_MEASUREMENT_MODEL = 1
-  return CUR_MEASUREMENT_MODEL
+# def getMeasurementModel():
+#   global CUR_MEASUREMENT_MODEL
+#   CUR_MEASUREMENT_MODEL += 1
+#   if CUR_MEASUREMENT_MODEL > 3:
+#     CUR_MEASUREMENT_MODEL = 1
+#   return CUR_MEASUREMENT_MODEL
 
 def quaternion_mult(q1,q2):
   w1, x1, y1, z1 = q1
@@ -34,7 +34,10 @@ def generate_zero_sigma_points(error_cov, process_noise_cov):
   # TODO: validate tis
   epsilon = 1e-6
   combined_cov += np.eye(combined_cov.shape[0]) * epsilon
-    
+  
+  print(error_cov)
+  print(process_noise_cov)
+  print(combined_cov)
   
   sqrt_cov = np.linalg.cholesky(combined_cov) * np.sqrt(2 * STATE_DIM)
 
@@ -131,7 +134,7 @@ def compute_adj_sigma_points(transformed_sigma_points, priori_state_estimate):
 def compute_priori_error_cov(adjusted_sigma_points):
   priori_error_cov = np.zeros((STATE_DIM, STATE_DIM))
   for i in range(2*STATE_DIM):
-    priori_error_cov += adjusted_sigma_points[i] * adjusted_sigma_points[i].T
+    priori_error_cov += adjusted_sigma_points[i] @ adjusted_sigma_points[i].T
   priori_error_cov = priori_error_cov / (2*STATE_DIM)
   return priori_error_cov
 
@@ -166,7 +169,7 @@ def H3(sigma_point,measurement_noise):
   return b_prime
 
 def compute_measurement_sigma_points(sigma_points,measurement_noise):
-  model = getMeasurementModel()
+  model = CUR_MEASUREMENT_MODEL
   measurement_sigma_points = []
   for i in range(2*STATE_DIM):
     if model == 1:
@@ -313,12 +316,22 @@ class KalmanFilter:
     
     # self.print_all()
 
-  def update(self,measurement,time_diff):
+  def update(self,acc,gyro,mag,time_diff):
     # 7
     self.measurement_sigma_points = compute_measurement_sigma_points(self.transformed_sigma_points,0)
 
     # 8
     self.predicted_measurement_estimate = mean_of_measurement_sigma_points(self.measurement_sigma_points)
+    if CUR_MEASUREMENT_MODEL == 1:
+      measurement = gyro
+    elif CUR_MEASUREMENT_MODEL == 2:
+      measurement = acc
+    elif CUR_MEASUREMENT_MODEL == 3:
+      measurement = mag
+    else:
+      measurement = -1
+      exit(measurement)
+      
     self.innovation = compute_innovation(self.predicted_measurement_estimate,measurement)
     
     # 9
@@ -333,17 +346,22 @@ class KalmanFilter:
     self.state_estimate = compute_state_estimate(self.priori_state_estimate,self.kalman_gain,self.innovation)
     self.error_cov = compute_error_cov(self.priori_error_cov,self.kalman_gain,self.innovation_cov)
     
-    
-    
+  
     # self.print_all()
 
 
-  def cycle(self,timestamp,measurement):
+  def cycle(self,timestamp,acc,gyro,mag):
+    global CUR_MEASUREMENT_MODEL
+    print("CUR_MEASUREMENT_MODEL: ", CUR_MEASUREMENT_MODEL)
     time_diff = timestamp - self.last_time
     self.last_time = timestamp
 
     self.prediction(time_diff)
-    self.update(measurement,time_diff)
+    self.update(acc,gyro,mag,time_diff)
+    
+    CUR_MEASUREMENT_MODEL += 1
+    if CUR_MEASUREMENT_MODEL > 3:
+      CUR_MEASUREMENT_MODEL = 1
     return self.state_estimate
 
 
