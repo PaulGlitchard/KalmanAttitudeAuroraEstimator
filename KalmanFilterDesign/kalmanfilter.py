@@ -31,6 +31,11 @@ def quaternion_inv(q):
 
 def generate_zero_sigma_points(error_cov, process_noise_cov):
   combined_cov = error_cov + process_noise_cov
+  # TODO: validate tis
+  epsilon = 1e-6
+  combined_cov += np.eye(combined_cov.shape[0]) * epsilon
+    
+  
   sqrt_cov = np.linalg.cholesky(combined_cov) * np.sqrt(2 * STATE_DIM)
 
   zero_sigma_points = []
@@ -57,6 +62,7 @@ def process_model(state_vector, process_noise, time_difference):
   if angle_delta > 0 and np.linalg.norm(omega) != 0:
     axis_delta = omega / np.linalg.norm(omega)
     vectorial_part = np.sin(angle_delta / 2) * axis_delta
+    q_delta = np.array([0,0,0,0]).reshape(-1, 1)
     q_delta[0] =  np.cos(angle_delta / 2)
     q_delta[1] =  vectorial_part[0]
     q_delta[2] =  vectorial_part[1]
@@ -174,15 +180,49 @@ def compute_measurement_sigma_points(sigma_points,measurement_noise):
 def mean_of_measurement_sigma_points(measurement_sigma_points):
   mean = 0
   for i in range(2*STATE_DIM):
-    mean += mean_of_measurement_sigma_points[i]
+    mean += measurement_sigma_points[i]
     
   return mean / (2*STATE_DIM)
 
-def compute_innovation():
+def compute_innovation(predicted_measurement_estimate,measurement):
+  return measurement - predicted_measurement_estimate
+
+def compute_pred_measurement_cov(predicted_measurement_estimate,measurement_sigma_points):
+  mean = 0
+  for i in range(2*STATE_DIM):
+    mean += measurement_sigma_points[i] - predicted_measurement_estimate
+    
+  return mean / (2*STATE_DIM)
+
+def compute_innovation_cov(pred_measurement_cov,measurement_noise_cov):
+  return pred_measurement_cov + measurement_noise_cov
+
+def compute_cross_correlation(adjusted_sigma_points, measurement_sigma_points,predicted_measurement_estimate):
+  mean = 0
+  for i in range(2*STATE_DIM):
+    mean = adjusted_sigma_points[i] * (measurement_sigma_points[i]-predicted_measurement_estimate).T
+  return mean / (2*STATE_DIM)
+
+def compute_kalman_gain(cross_correlation,innovation_cov):
+  return cross_correlation @ np.linalg.inv(innovation_cov)
+
+def compute_state_estimate(priori_state_estimate,kalman_gain,innovation):
+  return priori_state_estimate + kalman_gain @ innovation
+
+def compute_error_cov(priori_error_cov,kalman_gain,innovation_cov):
+  print("priori_error_cov")
+  print(priori_error_cov)
+  print("kalman_gain")
+  print(kalman_gain)
+  print("innovation_cov")
+  print(innovation_cov)
+  print("np.array(kalman_gain).T")
+  print(np.array(kalman_gain).T)
+  return priori_error_cov - kalman_gain @ innovation_cov @ np.array(kalman_gain).T
 
 class KalmanFilter:
   def __init__(self):
-    # state variables
+    # State variables
     self.state_vector = np.zeros(STATE_DIM).reshape(-1, 1)
 
     # Covariance Matrices
@@ -195,28 +235,25 @@ class KalmanFilter:
     self.cross_correlation = np.zeros((STATE_DIM, MEASUREMENT_DIM))
 
     # Sigma Points
-    self.sigma_points = np.array([np.zeros(STATE_DIM) for _ in range(2*STATE_DIM)])
-    self.zero_sigma_points = np.array([np.zeros(STATE_DIM) for _ in range(2*STATE_DIM)])
-    self.transformed_sigma_points = np.array([np.zeros(STATE_DIM) for _ in range(2*STATE_DIM)])
-    self.measurement_sigma_points = np.array([np.zeros(MEASUREMENT_DIM) for _ in range(2*STATE_DIM)])
-    self.adjusted_sigma_points = np.array([np.zeros(STATE_DIM) for _ in range(2*STATE_DIM)])
+    self.sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.zero_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.transformed_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.measurement_sigma_points = [np.zeros(MEASUREMENT_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.adjusted_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
 
     # Mean Values
-    self.state_estimate = np.zeros(STATE_DIM)
-    self.priori_state_estimate = np.zeros(STATE_DIM)
-    self.predicted_measurement_estimate = np.zeros(MEASUREMENT_DIM)
+    self.state_estimate = np.zeros(STATE_DIM).reshape(-1, 1)
+    self.priori_state_estimate = np.zeros(STATE_DIM).reshape(-1, 1)
+    self.predicted_measurement_estimate = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
 
     # Measurement and Innovation
-    self.measurement = np.zeros(MEASUREMENT_DIM)
-    self.innovation = np.zeros(MEASUREMENT_DIM)
+    self.measurement = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
+    self.innovation = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
 
     # Kalman Gain
     self.kalman_gain = np.zeros((STATE_DIM, MEASUREMENT_DIM))
 
-    # Process and Measurement Models
-    # self.process_model = None
-    # self.measurement_model = None
-
+    # Time
     self.last_time = 0
 
   def initialization(self):
@@ -233,12 +270,11 @@ class KalmanFilter:
     self.cross_correlation = np.zeros((STATE_DIM, MEASUREMENT_DIM))
 
     # Sigma Points
-    self.sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2*STATE_DIM)]
-    self.zero_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2*STATE_DIM)]
-    self.transformed_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2*STATE_DIM)]
-    self.measurement_sigma_points = [np.zeros(MEASUREMENT_DIM).reshape(-1, 1) for _ in range(2*STATE_DIM)]
-    self.adjusted_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2*STATE_DIM)]
-
+    self.sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.zero_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.transformed_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.measurement_sigma_points = [np.zeros(MEASUREMENT_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
+    self.adjusted_sigma_points = [np.zeros(STATE_DIM).reshape(-1, 1) for _ in range(2 * STATE_DIM)]
 
     # Mean Values
     self.state_estimate = np.zeros(STATE_DIM).reshape(-1, 1)
@@ -252,10 +288,7 @@ class KalmanFilter:
     # Kalman Gain
     self.kalman_gain = np.zeros((STATE_DIM, MEASUREMENT_DIM))
 
-    # Process and Measurement Models
-    # self.process_model
-    # self.measurement_model
-
+    # Time
     self.last_time = 0
 
   def prediction(self,time_diff):
@@ -278,44 +311,46 @@ class KalmanFilter:
     # 6
     self.priori_error_cov = compute_priori_error_cov(self.adjusted_sigma_points)
     
-    self.print_all()
+    # self.print_all()
 
-  def update(self,time_diff):
+  def update(self,measurement,time_diff):
     # 7
     self.measurement_sigma_points = compute_measurement_sigma_points(self.transformed_sigma_points,0)
 
     # 8
     self.predicted_measurement_estimate = mean_of_measurement_sigma_points(self.measurement_sigma_points)
-    self.innovation = compute_innovation()
+    self.innovation = compute_innovation(self.predicted_measurement_estimate,measurement)
     
     # 9
-    # self.innovation_cov = compute_innovation_cov()
+    self.pred_measurement_cov = compute_pred_measurement_cov(self.predicted_measurement_estimate,self.measurement_sigma_points)
+    self.innovation_cov = compute_innovation_cov(self.pred_measurement_cov,self.measurement_noise_cov)
     
     # 10
-    # self.cross_correlation = compute_cross_correlation()
+    self.cross_correlation = compute_cross_correlation(self.adjusted_sigma_points,self.measurement_sigma_points,self.predicted_measurement_estimate)
     
     # 11
-    # self.kalman_gain = compute_kalman_gain()
-    # self.state_estimate = compute_state_estimate()
-    # self.error_cov = compute_error_cov()
+    self.kalman_gain = compute_kalman_gain(self.cross_correlation,self.innovation_cov)
+    self.state_estimate = compute_state_estimate(self.priori_state_estimate,self.kalman_gain,self.innovation)
+    self.error_cov = compute_error_cov(self.priori_error_cov,self.kalman_gain,self.innovation_cov)
     
     
     
-    self.print_all()
+    # self.print_all()
 
 
-  def cycle(self,timestamp):
+  def cycle(self,timestamp,measurement):
     time_diff = timestamp - self.last_time
     self.last_time = timestamp
 
     self.prediction(time_diff)
-    self.update(time_diff)
-    return self.state_vector
+    self.update(measurement,time_diff)
+    return self.state_estimate
 
 
   def print_all(self):
     # state variables
     print("state_vector")
+    print("NOT USED")
     print(self.state_vector)
 
     # Covariance Matrices

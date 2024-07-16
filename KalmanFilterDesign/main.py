@@ -1,12 +1,14 @@
 import kalmanfilter as kf
-
+import numpy as np
 
 def main():
   KF = kf.KalmanFilter()
   KF.initialization()
-  KF.cycle(0)
-  # for i in range(10):
-  #   KF.execute_kalman_filter(i)
+  liste = []
+  for i in range(4096):
+    liste.append(KF.cycle(i,np.array([1,1,1]).reshape(-1,1)))
+  for item in liste:
+    print(item)
 
 if __name__ == '__main__':
   main()  

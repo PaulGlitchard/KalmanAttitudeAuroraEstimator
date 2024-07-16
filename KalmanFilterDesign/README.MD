@@ -18,7 +18,7 @@
 | adjusted_sigma_points | $W'_i$ |
 | state_estimate | $\hat{x}_k$ |
 | priori_state_estimate | $\hat{x}_k^-$ |
-| predicted_measurement_estimate | $\hat{z}_k^-$ |
+| predicted_measurement_estimate | $z_k^-$ |
 | measurement | $z_k$ |
 | innovation | $ν_k$ |
 | kalman_gain | $K_k$ |
