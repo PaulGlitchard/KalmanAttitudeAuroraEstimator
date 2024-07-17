@@ -1,0 +1,3 @@
+[submodule "DADS"]
+	path = DADS
+	url = git@git.astg.at:astg/avionics/ravenos/ravenos.git
