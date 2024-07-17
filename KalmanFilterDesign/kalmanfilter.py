@@ -1,5 +1,7 @@
 
 import numpy as np
+np.set_printoptions(threshold=np.inf, linewidth=np.inf, precision=6)
+PRINT_ENABLE = 0
 
 STATE_DIM = 7 # (orientation and angular velocity)
 MEASUREMENT_DIM = 3
@@ -34,10 +36,6 @@ def generate_zero_sigma_points(error_cov, process_noise_cov):
   # TODO: validate tis
   epsilon = 1e-6
   combined_cov += np.eye(combined_cov.shape[0]) * epsilon
-  
-  print(error_cov)
-  print(process_noise_cov)
-  print(combined_cov)
   
   sqrt_cov = np.linalg.cholesky(combined_cov) * np.sqrt(2 * STATE_DIM)
 
@@ -203,24 +201,19 @@ def compute_innovation_cov(pred_measurement_cov,measurement_noise_cov):
 def compute_cross_correlation(adjusted_sigma_points, measurement_sigma_points,predicted_measurement_estimate):
   mean = 0
   for i in range(2*STATE_DIM):
-    mean = adjusted_sigma_points[i] * (measurement_sigma_points[i]-predicted_measurement_estimate).T
+    mean = adjusted_sigma_points[i] @ (measurement_sigma_points[i]-predicted_measurement_estimate).T
+    
   return mean / (2*STATE_DIM)
 
 def compute_kalman_gain(cross_correlation,innovation_cov):
+
+
   return cross_correlation @ np.linalg.inv(innovation_cov)
 
 def compute_state_estimate(priori_state_estimate,kalman_gain,innovation):
   return priori_state_estimate + kalman_gain @ innovation
 
 def compute_error_cov(priori_error_cov,kalman_gain,innovation_cov):
-  print("priori_error_cov")
-  print(priori_error_cov)
-  print("kalman_gain")
-  print(kalman_gain)
-  print("innovation_cov")
-  print(innovation_cov)
-  print("np.array(kalman_gain).T")
-  print(np.array(kalman_gain).T)
   return priori_error_cov - kalman_gain @ innovation_cov @ np.array(kalman_gain).T
 
 class KalmanFilter:
@@ -250,7 +243,7 @@ class KalmanFilter:
     self.predicted_measurement_estimate = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
 
     # Measurement and Innovation
-    self.measurement = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
+    # self.measurement = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
     self.innovation = np.zeros(MEASUREMENT_DIM).reshape(-1, 1)
 
     # Kalman Gain
@@ -314,9 +307,16 @@ class KalmanFilter:
     # 6
     self.priori_error_cov = compute_priori_error_cov(self.adjusted_sigma_points)
     
-    # self.print_all()
+    self.print_all()
 
   def update(self,acc,gyro,mag,time_diff):
+    print("----measurements----")
+    print("acc")
+    print(acc)
+    print("mag")
+    print(mag)
+    print("gyro")
+    print(gyro)
     # 7
     self.measurement_sigma_points = compute_measurement_sigma_points(self.transformed_sigma_points,0)
 
@@ -347,7 +347,7 @@ class KalmanFilter:
     self.error_cov = compute_error_cov(self.priori_error_cov,self.kalman_gain,self.innovation_cov)
     
   
-    # self.print_all()
+    self.print_all()
 
 
   def cycle(self,timestamp,acc,gyro,mag):
@@ -366,6 +366,9 @@ class KalmanFilter:
 
 
   def print_all(self):
+    if not PRINT_ENABLE:
+      return
+    print("======================")
     # state variables
     print("state_vector")
     print("NOT USED")
@@ -408,8 +411,8 @@ class KalmanFilter:
     print(self.predicted_measurement_estimate)
 
     # Measurement and Innovation
-    print("measurement")
-    print(self.measurement)
+    # print("measurement")
+    # print(self.measurement)
     print("innovation")
     print(self.innovation)
 
@@ -420,3 +423,5 @@ class KalmanFilter:
     # Process and Measurement Models
     # self.process_model = None
     # self.measurement_model = None
+    print("======================")
+    
